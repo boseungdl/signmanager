@@ -14,14 +14,25 @@ spring:
   output:
     ansi:
       enabled: always
+server:
+  port: 8080
 logging:
   level:
     root: INFO
     org.hibernate.SQL: DEBUG        # Hibernate SQL 직접 로그
     org.hibernate.type: TRACE       # 쿼리 파라미터 로그
-    com.signproject.signmanager.util.JwtTokenProvider: DEBUG
+    # JwtUtil 클래스 로그 레벨 (필요 시 조정)
+    com.example.signmanager.jwt.JwtUtil: DEBUG # JwtUtil 클래스 로그 레벨 설정
 
-server:
-  port: 8080
-
-
+# --- ⭐ JWT 설정 추가 시작 ⭐ ---
+jwt:
+  # JWT 비밀 키 (Base64 인코딩된 문자열이어야 합니다.)
+  # 이 키는 토큰 서명에 사용되므로 외부에 노출되지 않도록 철저히 관리해야 합니다.
+  # 실제 서비스에서는 환경 변수 등으로 관리하는 것이 좋습니다.
+  # 예시: openssl rand -base64 32 명령어로 32바이트 길이의 강력한 키를 생성할 수 있습니다.
+  # ⭐ 절대 이 예시 키를 실제 프로덕션 환경에서 사용하지 마세요! ⭐
+  secret-key: c2VjcmV0S2V5Rm9ySldUVG9rZW5UZXN0MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=
+  # JWT 토큰 만료 시간 (밀리초 단위)
+  # 예시: 3600000ms = 1시간, 86400000ms = 24시간 (1일)
+  expiration-time-ms: 3600000
+# --- ⭐ JWT 설정 추가 끝 ⭐ ---
