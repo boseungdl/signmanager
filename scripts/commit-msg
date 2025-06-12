@@ -1,36 +1,60 @@
 #!/bin/sh
 
-# 커밋 메시지 파일 경로 (Git이 자동으로 첫 번째 인자로 전달)
+# -------------------------------------------------------------
+# Git commit-msg 훅: 커밋 메시지 형식 검증
+# -------------------------------------------------------------
+
+# LC_ALL 환경 변수 설정 (UTF-8 문자 처리를 위해 필수)
+export LC_ALL="C.UTF-8" # Git Bash 환경에 가장 적합
+export LANG="C.UTF-8"
+
 COMMIT_MSG_FILE=$1
+FIRST_LINE=$(head -n1 "$COMMIT_MSG_FILE")
 
-# 커밋 메시지 내용 읽기
-COMMIT_MESSAGE=$(cat "$COMMIT_MSG_FILE")
+# --- 디버깅용: 실제 검사 대상 문자열과 길이 출력 ---
+echo "--- 디버깅 정보 ---"
+echo "검사할 첫 줄: '$FIRST_LINE'"
+echo "첫 줄 길이: $(echo -n "$FIRST_LINE" | wc -c) 바이트"
+echo "-------------------"
+# ---------------------------------------------------
 
-# 첫 줄만 가져와서 검사 (커밋 메시지의 제목 부분)
-FIRST_LINE=$(echo "$COMMIT_MESSAGE" | head -n1)
-
-# 커밋 메시지 규칙 정의 (예: feat:, fix:, chore: 등으로 시작하고 뒤에 콜론과 공백, 메시지가 와야 함)
-# 정규식: ^(feat|fix|chore|docs|style|refactor|test|build|ci|perf|revert)(\(.+\))?: .{1,50}$
-# - ^ : 문자열의 시작
-# - (feat|fix|...) : 정해진 타입 중 하나 (scope는 선택 사항)
-# - (\(.+\))?: scope (괄호 안의 문자열)는 선택 사항
-# - : : 타입/스코프 뒤에 콜론
-# - ' ' : 콜론 뒤에 공백 하나
-# - .{1,50} : 메시지 내용은 최소 1자, 최대 50자 (일반적인 컨벤션)
-# - $ : 문자열의 끝
-
-if ! echo "$FIRST_LINE" | grep -Eq "^(feat|fix|chore|docs|style|refactor|test|build|ci|perf|revert)(\(.+\))?: .{1,50}$"; then
+# awk를 사용하여 정규식 매칭을 수행합니다.
+# 엄격한 정규식: 타입, 스코프(선택), 주제(1-50자), 그리고 (#이슈번호)
+# \d 대신 [0-9]를 사용하며, 괄호는 \\로 이스케이프해야 합니다.
+if ! echo "$FIRST_LINE" | tr -d '\r' | awk '
+BEGIN {
+    # 정규식 패턴을 변수로 정의:
+    # ^(feat|fix|...) : 커밋 타입 강제
+    # (\\(.+\\))?     : 스코프 (예: (hook))는 선택 사항
+    # :              : 콜론과 공백
+    # .{1,50}        : 주제는 1글자에서 50글자 사이 (공백 포함)
+    # \\(#([0-9]+)\\) : (#숫자) 형식의 이슈 번호 (숫자는 [0-9]+)
+    # \\r?$          : 선택적 캐리지 리턴 및 줄의 끝
+    regex_pattern = "^(feat|fix|chore|docs|style|refactor|test|build|ci|perf|revert)(\\(.+\\))?: .{1,50} \\(#([0-9]+)\\)\\r?$"
+}
+{
+    if ($0 ~ regex_pattern) {
+        exit 0 # 매칭 성공
+    } else {
+        exit 1 # 매칭 실패
+    }
+}
+'; then
   echo ""
-  echo "❌ Error: Invalid commit message format."
-  echo "Please follow the Conventional Commits specification."
-  echo "Example: feat(auth): Add user login endpoint"
-  echo "Example: fix: Resolve database connection issue"
+  echo "-------------------------------------------------------------"
+  echo "❌ 오류: 유효하지 않은 커밋 메시지 형식입니다."
+  echo "컨벤셔널 커밋 규칙에 따라 이슈 번호를 포함하여 작성해 주세요."
   echo ""
-  echo "Allowed types: feat, fix, chore, docs, style, refactor, test, build, ci, perf, revert"
-  echo "Format: <type>(<scope>): <subject>"
-  echo "Subject length: 1-50 characters"
+  echo "예시:"
+  echo "  feat(인증): 사용자 로그인 엔드포인트 추가 (#123)"
+  echo "  fix: 데이터베이스 연결 문제 해결 (#456)"
   echo ""
-  exit 1 # 검증 실패 시 Git 커밋을 중단
+  echo "허용되는 타입: feat, fix, chore, docs, style, refactor, test, build, ci, perf, revert"
+  echo "형식: <타입>(<범위>): <주제> (#이슈번호)"
+  echo "주제 길이: 1-50자"
+  echo "-------------------------------------------------------------"
+  echo ""
+  exit 1
 fi
 
-exit 0 # 검증 성공 시 계속 진행
+exit 0
