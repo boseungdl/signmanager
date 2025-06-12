@@ -51,10 +51,9 @@ dependencies {
 	useJUnitPlatform()
 }
 // pre-commit 훅 스크립트를 .git/hooks로 복사하는 태스크
-			tasks.register('updateGitHooks', Copy) {
+tasks.register('updateGitHooks', Copy) {
 	from './scripts/pre-commit'
 	into './.git/hooks'
-	fileMode = 0755 // 이 부분이 Windows에서도 권한을 설정해줍니다.
 }
 
 // makeGitHooksExecutable 태스크는 이제 완전히 필요 없습니다. (제거 또는 주석 처리)
@@ -68,7 +67,6 @@ dependencies {
 tasks.register('updateCommitMsgHook', Copy) {
 	from './scripts/commit-msg' // 스크립트 원본 경로
 	into './.git/hooks' // Git 훅 폴더
-	fileMode = 0755 // Windows에서도 권한 설정
 }
 
 // makeCommitMsgHookExecutable 태스크도 이제 완전히 필요 없습니다. (제거 또는 주석 처리)
