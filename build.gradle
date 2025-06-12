@@ -50,15 +50,34 @@ dependencies {
   tasks.named('test') {
 	useJUnitPlatform()
 }
-
+// pre-commit 훅 스크립트를 .git/hooks로 복사하는 태스크
 tasks.register('updateGitHooks', Copy) {
 	from './scripts/pre-commit'
 	into './.git/hooks'
+	fileMode = 0755 // 이 부분이 Windows에서도 권한을 설정해줍니다.
 }
+
+// makeGitHooksExecutable 태스크는 이제 완전히 필요 없습니다. (제거 또는 주석 처리)
 //tasks.register('makeGitHooksExecutable', Exec) {
-//	commandLine 'chmod', '+x', './.git/hooks/pre-commit'
-//	dependsOn updateGitHooks
+//  commandLine 'chmod', '+x', './.git/hooks/pre-commit'
+//  dependsOn updateGitHooks
 //}
 
 
-//compileJava.dependsOn makeGitHooksExecutable
+// commit-msg 훅 스크립트를 .git/hooks로 복사하는 태스크 추가
+tasks.register('updateCommitMsgHook', Copy) {
+	from './scripts/commit-msg' // 스크립트 원본 경로
+	into './.git/hooks' // Git 훅 폴더
+	fileMode = 0755 // Windows에서도 권한 설정
+}
+
+// makeCommitMsgHookExecutable 태스크도 이제 완전히 필요 없습니다. (제거 또는 주석 처리)
+//tasks.register('makeCommitMsgExecutable', Exec) {
+//    commandLine 'chmod', '+x', './.git/hooks/commit-msg'
+//    dependsOn updateCommitMsgHook
+//}
+
+// compileJava 태스크가 실행될 때마다 Git 훅들을 업데이트합니다.
+// Exec 태스크들을 호출할 필요 없이 Copy 태스크만 dependOn에 추가합니다.
+compileJava.dependsOn updateGitHooks
+compileJava.dependsOn updateCommitMsgHook // 새로 추가된 commit-msg 훅 업데이트 태스크
