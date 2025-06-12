@@ -51,7 +51,7 @@ dependencies {
 	useJUnitPlatform()
 }
 // pre-commit 훅 스크립트를 .git/hooks로 복사하는 태스크
-		tasks.register('updateGitHooks', Copy) {
+			tasks.register('updateGitHooks', Copy) {
 	from './scripts/pre-commit'
 	into './.git/hooks'
 	fileMode = 0755 // 이 부분이 Windows에서도 권한을 설정해줍니다.
